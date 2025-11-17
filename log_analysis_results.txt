@@ -1,0 +1,143 @@
+Web Server Log Analysis Results
+================================================================================
+
+Endpoint: /api/search
+  Total Requests: 109
+  Response Time (avg): 230.62 ms
+  Response Time (min): 50.00 ms
+  Response Time (max): 3268.00 ms
+  Success Count: 87
+  Error Count: 22
+  Error Rate: 20.18%
+  HTTP Methods: {'DELETE': 2, 'GET': 61, 'POST': 27, 'PUT': 19}
+  Status Codes: {'200': 69, '201': 12, '204': 6, '400': 5, '401': 6, '404': 9, '500': 2}
+  Peak Hours: [{'hour': 12, 'requests': 11}, {'hour': 13, 'requests': 10}, {'hour': 16, 'requests': 10}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/products
+  Total Requests: 106
+  Response Time (avg): 316.63 ms
+  Response Time (min): 53.00 ms
+  Response Time (max): 3298.00 ms
+  Success Count: 90
+  Error Count: 16
+  Error Rate: 15.09%
+  HTTP Methods: {'DELETE': 2, 'GET': 57, 'POST': 33, 'PUT': 14}
+  Status Codes: {'200': 75, '201': 8, '204': 7, '400': 3, '401': 3, '404': 5, '500': 2, '503': 3}
+  Peak Hours: [{'hour': 7, 'requests': 11}, {'hour': 16, 'requests': 10}, {'hour': 15, 'requests': 10}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/orders
+  Total Requests: 105
+  Response Time (avg): 173.27 ms
+  Response Time (min): 52.00 ms
+  Response Time (max): 478.00 ms
+  Success Count: 93
+  Error Count: 12
+  Error Rate: 11.43%
+  HTTP Methods: {'DELETE': 3, 'GET': 62, 'POST': 28, 'PUT': 12}
+  Status Codes: {'200': 79, '201': 9, '204': 5, '400': 4, '401': 6, '404': 2}
+  Peak Hours: [{'hour': 11, 'requests': 12}, {'hour': 12, 'requests': 10}, {'hour': 10, 'requests': 10}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/users
+  Total Requests: 103
+  Response Time (avg): 320.86 ms
+  Response Time (min): 50.00 ms
+  Response Time (max): 4572.00 ms
+  Success Count: 84
+  Error Count: 19
+  Error Rate: 18.45%
+  HTTP Methods: {'DELETE': 4, 'GET': 60, 'POST': 27, 'PUT': 12}
+  Status Codes: {'200': 71, '201': 9, '204': 4, '400': 8, '401': 2, '404': 5, '500': 3, '503': 1}
+  Peak Hours: [{'hour': 10, 'requests': 12}, {'hour': 12, 'requests': 11}, {'hour': 8, 'requests': 10}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/checkout
+  Total Requests: 102
+  Response Time (avg): 306.90 ms
+  Response Time (min): 50.00 ms
+  Response Time (max): 4359.00 ms
+  Success Count: 86
+  Error Count: 16
+  Error Rate: 15.69%
+  HTTP Methods: {'DELETE': 3, 'GET': 60, 'POST': 30, 'PUT': 9}
+  Status Codes: {'200': 69, '201': 11, '204': 6, '400': 6, '401': 2, '404': 4, '500': 2, '503': 2}
+  Peak Hours: [{'hour': 13, 'requests': 11}, {'hour': 15, 'requests': 10}, {'hour': 8, 'requests': 9}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/cart
+  Total Requests: 100
+  Response Time (avg): 352.39 ms
+  Response Time (min): 51.00 ms
+  Response Time (max): 3600.00 ms
+  Success Count: 87
+  Error Count: 13
+  Error Rate: 13.00%
+  HTTP Methods: {'DELETE': 6, 'GET': 60, 'POST': 26, 'PUT': 8}
+  Status Codes: {'200': 74, '201': 12, '204': 1, '400': 4, '401': 1, '404': 2, '500': 3, '503': 3}
+  Peak Hours: [{'hour': 10, 'requests': 14}, {'hour': 11, 'requests': 11}, {'hour': 14, 'requests': 8}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/reviews
+  Total Requests: 99
+  Response Time (avg): 196.32 ms
+  Response Time (min): 59.00 ms
+  Response Time (max): 494.00 ms
+  Success Count: 84
+  Error Count: 15
+  Error Rate: 15.15%
+  HTTP Methods: {'DELETE': 5, 'GET': 56, 'POST': 25, 'PUT': 13}
+  Status Codes: {'200': 72, '201': 7, '204': 5, '400': 7, '401': 2, '404': 6}
+  Peak Hours: [{'hour': 11, 'requests': 13}, {'hour': 15, 'requests': 10}, {'hour': 10, 'requests': 9}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /dashboard
+  Total Requests: 96
+  Response Time (avg): 268.65 ms
+  Response Time (min): 50.00 ms
+  Response Time (max): 3823.00 ms
+  Success Count: 78
+  Error Count: 18
+  Error Rate: 18.75%
+  HTTP Methods: {'DELETE': 5, 'GET': 56, 'POST': 22, 'PUT': 13}
+  Status Codes: {'200': 63, '201': 10, '204': 5, '400': 9, '401': 4, '404': 3, '500': 2}
+  Peak Hours: [{'hour': 12, 'requests': 11}, {'hour': 13, 'requests': 10}, {'hour': 11, 'requests': 9}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /api/recommendations
+  Total Requests: 94
+  Response Time (avg): 377.02 ms
+  Response Time (min): 58.00 ms
+  Response Time (max): 4467.00 ms
+  Success Count: 82
+  Error Count: 12
+  Error Rate: 12.77%
+  HTTP Methods: {'DELETE': 5, 'GET': 53, 'POST': 21, 'PUT': 15}
+  Status Codes: {'200': 61, '201': 10, '204': 11, '401': 3, '404': 4, '500': 5}
+  Peak Hours: [{'hour': 18, 'requests': 10}, {'hour': 11, 'requests': 9}, {'hour': 13, 'requests': 8}]
+
+--------------------------------------------------------------------------------
+
+Endpoint: /login
+  Total Requests: 86
+  Response Time (avg): 413.93 ms
+  Response Time (min): 55.00 ms
+  Response Time (max): 4185.00 ms
+  Success Count: 67
+  Error Count: 19
+  Error Rate: 22.09%
+  HTTP Methods: {'DELETE': 5, 'GET': 55, 'POST': 20, 'PUT': 6}
+  Status Codes: {'200': 61, '201': 6, '400': 6, '401': 3, '404': 4, '500': 4, '503': 2}
+  Peak Hours: [{'hour': 12, 'requests': 12}, {'hour': 10, 'requests': 8}, {'hour': 11, 'requests': 8}]
+
+--------------------------------------------------------------------------------
+
