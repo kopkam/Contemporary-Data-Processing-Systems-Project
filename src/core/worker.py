@@ -23,7 +23,7 @@ class Worker:
     and communicate with other workers during the shuffle phase.
     """
     
-    def __init__(self, worker_id: str, host: str, port: int, data_dir: str = None):
+    def __init__(self, worker_id: str, host: str, port: int):
         """
         Initialize a worker node.
         
@@ -31,15 +31,10 @@ class Worker:
             worker_id: Unique identifier for this worker
             host: Host address to bind to
             port: Port number to listen on
-            data_dir: Directory for temporary data storage
         """
         self.worker_id = worker_id
         self.host = host
         self.port = port
-        self.data_dir = data_dir or f"./data/{worker_id}"
-        
-        # Create data directory if it doesn't exist
-        os.makedirs(self.data_dir, exist_ok=True)
         
         # Flask app for HTTP endpoints
         self.app = Flask(__name__)
@@ -171,7 +166,7 @@ class Worker:
         self.app.run(host=self.host, port=self.port, debug=False)
 
 
-def start_worker(worker_id: str, host: str, port: int, data_dir: str = None):
+def start_worker(worker_id: str, host: str, port: int):
     """
     Helper function to start a worker node.
     
@@ -179,7 +174,6 @@ def start_worker(worker_id: str, host: str, port: int, data_dir: str = None):
         worker_id: Unique worker identifier
         host: Host address
         port: Port number
-        data_dir: Data directory path
     """
-    worker = Worker(worker_id, host, port, data_dir)
+    worker = Worker(worker_id, host, port)
     worker.start()

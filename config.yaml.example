@@ -13,23 +13,19 @@ cluster:
     - id: "worker-1"
       host: "192.168.1.10"  # ← CHANGE TO YOUR MACHINE 1 IP
       port: 5001
-      data_dir: "./data/worker1"
       
     - id: "worker-2"
       host: "192.168.1.10"  # ← CHANGE TO YOUR MACHINE 1 IP
       port: 5002
-      data_dir: "./data/worker2"
     
     # Workers on Machine 2 (Windows PC)
     - id: "worker-3"
       host: "192.168.1.20"  # ← CHANGE TO YOUR MACHINE 2 IP
       port: 5001
-      data_dir: "./data/worker3"
       
     - id: "worker-4"
       host: "192.168.1.20"  # ← CHANGE TO YOUR MACHINE 2 IP
       port: 5002
-      data_dir: "./data/worker4"
 
 # Dataset configuration
 dataset:
