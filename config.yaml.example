@@ -1,0 +1,61 @@
+# NYC Taxi Map-Reduce Cluster Configuration
+# EXAMPLE FILE - Copy to config.yaml and edit with your actual IP addresses
+
+cluster:
+  # Coordinator (master) node configuration
+  coordinator:
+    host: "localhost"
+    port: 5000
+    
+  # Worker nodes configuration
+  workers:
+    # Workers on Machine 1 (Mac/Linux with data)
+    - id: "worker-1"
+      host: "192.168.1.10"  # ← CHANGE TO YOUR MACHINE 1 IP
+      port: 5001
+      data_dir: "./data/worker1"
+      
+    - id: "worker-2"
+      host: "192.168.1.10"  # ← CHANGE TO YOUR MACHINE 1 IP
+      port: 5002
+      data_dir: "./data/worker2"
+    
+    # Workers on Machine 2 (Windows PC)
+    - id: "worker-3"
+      host: "192.168.1.20"  # ← CHANGE TO YOUR MACHINE 2 IP
+      port: 5001
+      data_dir: "./data/worker3"
+      
+    - id: "worker-4"
+      host: "192.168.1.20"  # ← CHANGE TO YOUR MACHINE 2 IP
+      port: 5002
+      data_dir: "./data/worker4"
+
+# Dataset configuration
+dataset:
+  # Path to NYC Taxi Parquet file (download from NYC TLC website)
+  # https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+  path: "./data/yellow_tripdata_2024-01.parquet"
+  
+  # Maximum records to load (null = all records, or set a number for testing)
+  # Examples: 1000, 50000, null
+  max_records: null
+  
+  # Columns to load (null = all columns)
+  columns: null
+
+# Execution settings
+execution:
+  # Timeout for individual map/reduce tasks (seconds)
+  task_timeout: 300
+  
+  # Number of retries for failed tasks
+  max_retries: 3
+
+# HOW TO USE:
+# 1. Copy this file: cp config.yaml.example config.yaml
+# 2. Find your IP addresses:
+#    - Mac/Linux: ifconfig getifaddr en0
+#    - Windows: ipconfig (look for IPv4 Address)
+# 3. Edit config.yaml with your actual IP addresses
+# 4. Copy config.yaml to all worker machines
