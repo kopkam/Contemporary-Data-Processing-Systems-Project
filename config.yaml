@@ -1,0 +1,60 @@
+# NYC Taxi Map-Reduce Cluster Configuration
+
+cluster:
+  # Coordinator (master) node configuration
+  coordinator:
+    host: "localhost"
+    port: 5000
+    
+  # Worker nodes configuration
+  workers:
+    - id: "worker-1"
+      host: "localhost"
+      port: 5001
+      data_dir: "./data/worker1"
+      
+    - id: "worker-2"
+      host: "localhost"
+      port: 5002
+      data_dir: "./data/worker2"
+      
+    - id: "worker-3"
+      host: "localhost"
+      port: 5003
+      data_dir: "./data/worker3"
+      
+    - id: "worker-4"
+      host: "localhost"
+      port: 5004
+      data_dir: "./data/worker4"
+
+# Dataset configuration
+dataset:
+  # Path to NYC Taxi Parquet file(s)
+  path: "./data/yellow_tripdata_2024-01.parquet"
+  
+  # Number of records to use (for testing, use null for all)
+  max_records: null  # Start with 50k for testing, set to null for all ~3M records
+  
+  # Columns to load (null = all columns)
+  columns: null
+
+# Task execution settings
+execution:
+  # Timeout for task operations (seconds)
+  task_timeout: 300
+  
+  # Maximum retries for failed operations
+  max_retries: 3
+  
+  # Heartbeat interval (seconds)
+  heartbeat_interval: 10
+  
+  # Shuffle buffer size (MB)
+  shuffle_buffer_size: 100
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "mapreduce.log"
