@@ -140,7 +140,9 @@ def run_coordinator(args):
     print(f"Total unique keys: {len(results)}")
     
     # Save results to file
-    output_file = f"results_task{task_num}.txt"
+    import os
+    os.makedirs("results", exist_ok=True)
+    output_file = f"results/results_task{task_num}.txt"
     with open(output_file, 'w') as f:
         f.write(f"Task {task_num}: {task_name}\n")
         f.write(f"{'='*60}\n\n")
