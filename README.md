@@ -116,7 +116,7 @@ python3 main.py coordinator --task 2
 python3 main.py coordinator --task 3
 ```
 
-**Results saved to:** `results_task1.txt`, `results_task2.txt`, `results_task3.txt`
+**Results saved to:** [results/](results/) folder (`results_task1.txt`, `results_task2.txt`, `results_task3.txt`)
 
 ---
 
