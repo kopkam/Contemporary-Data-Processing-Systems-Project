@@ -32,20 +32,31 @@ cd ..
 
 ### **2. Poznaj IP Adres Każdej Maszyny**
 
-**Na każdej maszynie:**
+**macOS/Linux:**
 
 ```bash
-# macOS/Linux
+# macOS
 ifconfig | grep "inet " | grep -v 127.0.0.1
-
-# Lub prościej (macOS)
+# lub
 ipconfig getifaddr en0  # WiFi
-ipconfig getifaddr en1  # Ethernet
 
-# Przykładowe wyniki:
-# Maszyna 1: 192.168.1.10
-# Maszyna 2: 192.168.1.20
+# Linux
+hostname -I | awk '{print $1}'
 ```
+
+**Windows:**
+
+```powershell
+# PowerShell lub CMD
+ipconfig
+
+# Znajdź "IPv4 Address" dla aktywnego adaptera (WiFi/Ethernet)
+# Przykład: 192.168.1.20
+```
+
+**Przykładowe wyniki:**
+- Maszyna 1 (Mac): 192.168.1.10
+- Maszyna 2 (Windows): 192.168.1.20
 
 **WAŻNE:** Wszystkie maszyny muszą być w tej samej sieci (WiFi/LAN)!
 
@@ -95,7 +106,7 @@ dataset:
 
 ### **4. Uruchom Workers**
 
-**Na Maszynie 1 (192.168.1.10):**
+**Na Maszynie 1 - macOS (192.168.1.10):**
 
 Terminal 1:
 ```bash
@@ -107,19 +118,22 @@ Terminal 2:
 python3 main.py worker worker-2 --host 0.0.0.0 --port 5002
 ```
 
-**Na Maszynie 2 (192.168.1.20):**
+**Na Maszynie 2 - Windows (192.168.1.20):**
 
-Terminal 1:
-```bash
-python3 main.py worker worker-3 --host 0.0.0.0 --port 5001
+PowerShell/CMD Terminal 1:
+```powershell
+python main.py worker worker-3 --host 0.0.0.0 --port 5001
 ```
 
-Terminal 2:
-```bash
-python3 main.py worker worker-4 --host 0.0.0.0 --port 5002
+PowerShell/CMD Terminal 2:
+```powershell
+python main.py worker worker-4 --host 0.0.0.0 --port 5002
 ```
 
-**⚠️ WAŻNE:** Użyj `--host 0.0.0.0` żeby worker słuchał na wszystkich interfejsach (nie tylko localhost)!
+**⚠️ WAŻNE:** 
+- Użyj `--host 0.0.0.0` żeby worker słuchał na wszystkich interfejsach!
+- Na Windows: `python` (bez "3")
+- Uruchom każdy worker w osobnym oknie PowerShell/CMD
 
 ---
 
@@ -149,7 +163,7 @@ Coordinator:
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
 
 # Jeśli potrzeba, pozwól Python na połączenia przychodzące
-# (System wyświetli dialog przy pierwszym uruchomieniu)
+# (System wyświetli dialog przy pierwszym uruchomieniu - kliknij "Allow")
 ```
 
 **Linux:**
@@ -163,38 +177,76 @@ sudo ufw allow 5002
 sudo ufw disable
 ```
 
-**Windows:**
+**Windows (WAŻNE!):**
 
 ```powershell
-# Dodaj regułę firewall
-netsh advfirewall firewall add rule name="MapReduce Workers" dir=in action=allow protocol=TCP localport=5001-5002
+# Uruchom PowerShell jako Administrator!
+
+# Metoda 1: Dodaj reguły dla konkretnych portów
+netsh advfirewall firewall add rule name="MapReduce Worker 5001" dir=in action=allow protocol=TCP localport=5001
+netsh advfirewall firewall add rule name="MapReduce Worker 5002" dir=in action=allow protocol=TCP localport=5002
+
+# Metoda 2: Dodaj regułę dla Python.exe
+netsh advfirewall firewall add rule name="Python MapReduce" dir=in action=allow program="C:\Users\<USER>\AppData\Local\Programs\Python\Python312\python.exe" enable=yes
+
+# Sprawdź reguły
+netsh advfirewall firewall show rule name="MapReduce Worker 5001"
 ```
+
+**Lub GUI (Windows - łatwiejsze):**
+1. Wyszukaj "Windows Defender Firewall" w Start
+2. Kliknij "Advanced settings"
+3. Kliknij "Inbound Rules" → "New Rule"
+4. Type: Port → Next
+5. TCP → Specific local ports: `5001, 5002` → Next
+6. Allow the connection → Next
+7. Zaznacz wszystkie profile → Next
+8. Name: "MapReduce Workers" → Finish
 
 ---
 
 ## 🧪 Test Połączenia
 
-**Z Maszyny 1, przetestuj połączenie do Maszyny 2:**
+**Z Maca (Maszyna 1), przetestuj połączenie do Windows (Maszyna 2):**
 
 ```bash
-# Test czy worker-3 odpowiada
+# Test czy worker-3 na Windows odpowiada
 curl http://192.168.1.20:5001/health
 
 # Powinno zwrócić:
 # {"status":"healthy","worker_id":"worker-3"}
 ```
 
-**Z Maszyny 2, przetestuj Maszynę 1:**
+**Z Windows (Maszyna 2), przetestuj Mac (Maszyna 1):**
 
-```bash
+PowerShell (v7+):
+```powershell
 curl http://192.168.1.10:5001/health
 ```
 
+Lub PowerShell (starsza wersja):
+```powershell
+Invoke-WebRequest -Uri http://192.168.1.10:5001/health
+
+# Lub użyj przeglądarki:
+# Otwórz http://192.168.1.10:5001/health
+```
+
+Lub CMD:
+```cmd
+# Jeśli masz curl (Windows 10+)
+curl http://192.168.1.10:5001/health
+
+# Albo użyj telnet do testu portu
+telnet 192.168.1.10 5001
+```
+
 Jeśli dostajesz `Connection refused` lub timeout:
-- ✅ Sprawdź czy worker działa (`ps aux | grep python`)
-- ✅ Sprawdź firewall
-- ✅ Sprawdź czy IP są poprawne
-- ✅ Sprawdź czy jesteście w tej samej sieci
+- ✅ Sprawdź czy worker działa
+- ✅ Sprawdź firewall (NAJCZĘSTSZY PROBLEM na Windows!)
+- ✅ Sprawdź czy IP są poprawne (`ipconfig` na Windows)
+- ✅ Sprawdź czy jesteście w tej samej sieci (to samo WiFi)
+- ✅ Pinguj drugą maszynę: `ping 192.168.1.20`
 
 ---
 
@@ -246,15 +298,16 @@ python3 main.py coordinator --task 1
 
 ---
 
-## 🎯 Najłatwiejsza Konfiguracja (2 laptopy w jednym WiFi)
+## 🎯 Najłatwiejsza Konfiguracja (Mac + Windows w jednym WiFi)
 
-**Laptop 1 (Twój MacBook):**
+**Mac (Twój MacBook - Maszyna 1):**
 - IP: 192.168.1.10
 - Worker-1 na porcie 5001
 - Worker-2 na porcie 5002
 - Coordinator
+- Dane Parquet
 
-**Laptop 2 (Kolega):**
+**Windows PC (Maszyna 2):**
 - IP: 192.168.1.20
 - Worker-3 na porcie 5001
 - Worker-4 na porcie 5002
@@ -269,11 +322,43 @@ workers:
     host: "192.168.1.10"
     port: 5002
   - id: "worker-3"
-    host: "192.168.1.20"
+    host: "192.168.1.20"  # Windows PC
     port: 5001
   - id: "worker-4"
-    host: "192.168.1.20"
+    host: "192.168.1.20"  # Windows PC
     port: 5002
+```
+
+### Krok po kroku:
+
+**1. Na Windows PC:**
+```powershell
+# PowerShell
+cd C:\Users\<TWOJ_USER>\Desktop
+git clone <repo-url>
+cd Contemporary-Data-Processing-Systems-Project
+pip install -r requirements.txt
+
+# Skopiuj config.yaml z Maca (przez pendrive lub git)
+
+# Otwórz 2 okna PowerShell i uruchom:
+# Okno 1:
+python main.py worker worker-3 --host 0.0.0.0 --port 5001
+
+# Okno 2:
+python main.py worker worker-4 --host 0.0.0.0 --port 5002
+```
+
+**2. Na Macu:**
+```bash
+# Terminal 1:
+python3 main.py worker worker-1 --host 0.0.0.0 --port 5001
+
+# Terminal 2:
+python3 main.py worker worker-2 --host 0.0.0.0 --port 5002
+
+# Terminal 3 - Coordinator:
+python3 main.py coordinator --task 1
 ```
 
 ---
