@@ -30,7 +30,8 @@ ENV/
 config.yaml
 
 # Data and output
-data/
+data/*
+!data/.gitkeep
 output/
 *.parquet
 *.csv
