@@ -3,272 +3,353 @@
 **Distributed MapReduce System**  
 ****
 
-## 📋 Project Overview
-
-This project implements a distributed map-reduce system for analyzing NYC Taxi & Limousine Commission trip data. The system processes large-scale taxi trip records using parallel computation across multiple worker nodes.
-
-### Team Members
-
-
-
-
-### Supervisor
-- **** ()
+Distributed map-reduce system for analyzing 3M NYC Taxi trip records across 2 physical machines (Mac + Windows).
 
 ---
 
-## 🎯 Individual Tasks
 
-### Task 1: Average Tip Percentage by Pickup Zone
-**Author:** 
 
-**Objective:** Analyze tipping behavior across different pickup zones in NYC.
 
-**Map Phase:**
-- Input: `(trip_id, trip_record)`
-- Output: `(pickup_zone_id, tip_percentage)`
-- Calculation: `tip_percentage = (tip_amount / fare_amount) × 100`
 
-**Reduce Phase:**
-- Input: `(pickup_zone_id, [tip_pct1, tip_pct2, ...])`
-- Output: `(pickup_zone_id, average_tip_percentage)`
 
-**Business Value:** Identifies zones where passengers tip more generously, helping taxi drivers optimize pickup strategies.
+- 
 
 ---
 
-### Task 2: Route Profitability Analysis
+## 🚀 Quick Start (Multi-Machine Deployment)
+
+### Prerequisites
+- **Machine 1 (Mac):** Python 3.9+, Git, 48MB dataset
+- **Machine 2 (Windows):** Python 3.9+, Git
+- Both machines on the **same WiFi network**
+
+### Setup
+
+#### 1️⃣ On Mac (Coordinator + Workers 1-2)
+
+```bash
+# Clone and setup
+git clone <repo-url>
+cd Contemporary-Data-Processing-Systems-Project
+pip3 install -r requirements.txt
+
+# Download NYC Taxi data (48MB)
+cd data
+wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet
+cd ..
+
+# Get Mac IP address
+ifconfig getifaddr en0  # e.g., 192.168.x.xx
+
+# Copy config.yaml.example to config.yaml and edit:
+cp config.yaml.example config.yaml
+nano config.yaml  # Update IPs
+```
+
+#### 2️⃣ On Windows PC (Workers 3-4)
+
+```powershell
+# Clone project
+git clone <repo-url>
+cd Contemporary-Data-Processing-Systems-Project
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Get Windows IP
+ipconfig  # Note IPv4 Address, e.g., 192.168.x.xx
+
+# Configure Windows Firewall (Run PowerShell as Administrator!)
+.\scripts\setup_windows_firewall.ps1
+
+# Copy config.yaml from Mac (via Git/USB/email)
+```
+
+#### 3️⃣ Configure IPs
+
+Edit `config.yaml` on **both machines**:
+
+```yaml
+cluster:
+  workers:
+    - id: "worker-1"
+      host: "192.168.x.xx"  # Mac IP
+      port: 5001
+    - id: "worker-2"
+      host: "192.168.x.xx"  # Mac IP
+      port: 5002
+    - id: "worker-3"
+      host: "192.168.x.xx"  # Windows IP
+      port: 5001
+    - id: "worker-4"
+      host: "192.168.x.xx"  # Windows IP
+      port: 5002
+
+dataset:
+  path: "./data/yellow_tripdata_2024-01.parquet"
+  max_records: null  # Process all 2.96M records
+```
+
+### Run
+
+#### On Windows PC:
+```powershell
+# Start workers (opens 2 PowerShell windows)
+.\scripts\start_windows_workers.ps1
+```
+
+#### On Mac:
+```bash
+# Start Mac workers (opens 2 Terminal windows)
+./scripts/start_mac_workers.sh
+
+# Test connectivity to all 4 workers
+./scripts/test_workers.sh
+
+# Run Task 1
+python3 main.py coordinator --task 1
+
+# Run Task 2
+python3 main.py coordinator --task 2
+
+# Run Task 3
+python3 main.py coordinator --task 3
+```
+
+**Results saved to:** `results_task1.txt`, `results_task2.txt`, `results_task3.txt`
+
+---
+
+## 📊 Tasks
+
+### Task 1: Tip Analysis by Pickup Zone
 **Author:** 
 
-**Objective:** Calculate revenue per mile for different pickup-dropoff zone pairs.
+Analyzes average tip percentage for each NYC taxi zone.
 
-**Map Phase:**
-- Input: `(trip_id, trip_record)`
-- Output: `((pickup_zone, dropoff_zone), revenue_per_mile)`
-- Calculation: `revenue_per_mile = total_amount / trip_distance`
+- **Map:** `(trip) → (pickup_zone_id, tip_percentage)`
+- **Reduce:** `(zone_id, [tips]) → (zone_id, avg_tip_pct)`
+- **Output:** 577 zones sorted by tip percentage
 
-**Reduce Phase:**
-- Input: `((pickup_zone, dropoff_zone), [rpm1, rpm2, ...])`
-- Output: `((pickup_zone, dropoff_zone), avg_revenue_per_mile)`
+**Example Result:**
+```
+Zone 216: 4294.21% avg tip
+Zone 265: 3567.86% avg tip
+Zone 133: 142.48% avg tip
+```
 
-**Business Value:** Identifies most profitable routes to maximize driver earnings per unit distance.
+---
+
+### Task 2: Route Profitability
+**Author:** 
+
+Calculates revenue per mile for pickup→dropoff routes.
+
+- **Map:** `(trip) → ("pickup->dropoff", revenue_per_mile)`
+- **Reduce:** `(route, [revenues]) → (route, avg_revenue_per_mile)`
+- **Output:** 37,738 routes sorted by profitability
+
+**Example Result:**
+```
+85->265: $11,260/mile
+80->255: $9,355/mile
+88->12: $7,900/mile
+```
 
 ---
 
 ### Task 3: Hourly Traffic Distribution
 **Author:** 
 
-**Objective:** Analyze temporal patterns in taxi usage by counting trips per hour.
+Analyzes trip counts by hour of day.
 
-**Map Phase:**
-- Input: `(trip_id, trip_record)`
-- Output: `(hour_of_day, 1)`
-- Extraction: Extract hour (0-23) from `tpep_pickup_datetime`
+- **Map:** `(trip) → (hour, 1)`
+- **Reduce:** `(hour, [counts]) → (hour, total_count)`
+- **Output:** 24 hours with trip counts
 
-**Reduce Phase:**
-- Input: `(hour_of_day, [1, 1, 1, ...])`
-- Output: `(hour_of_day, total_trip_count)`
-
-**Business Value:** Identifies peak hours for optimizing driver scheduling and understanding demand patterns.
+**Example Result:**
+```
+14:00: 141,826 trips (peak)
+19:00: 135,955 trips
+23:00: 55,539 trips (quietest)
+```
 
 ---
 
 ## 🏗️ Architecture
 
-### System Components
-
-1. **Coordinator (Master Node)**
-   - Orchestrates job execution
-   - Distributes data to workers
-   - Collects and aggregates results
-
-2. **Worker Nodes (4+)**
-   - Execute map and reduce tasks
-   - Communicate via HTTP REST API
-   - Direct peer-to-peer shuffle
-
-3. **Data Loader**
-   - Reads NYC Taxi Parquet files using PyArrow
-   - Handles data partitioning
-
-### Map-Reduce Flow
-
 ```
-Input Data (Parquet)
-    ↓
-Coordinator splits data
-    ↓
-Workers: MAP phase (parallel)
-    ↓
-Shuffle phase (worker-to-worker)
-    ↓
-Workers: REDUCE phase (parallel)
-    ↓
-Coordinator collects results
-    ↓
-Final Output
+┌─────────────────────────────────────────────────────┐
+│  Mac (192.168.x.xx)                                 │
+│  ┌──────────────┐  ┌─────────┐  ┌─────────┐       │
+│  │ Coordinator  │  │Worker-1 │  │Worker-2 │       │
+│  │  (Flask)     │  │ :5001   │  │ :5002   │       │
+│  └──────┬───────┘  └────┬────┘  └────┬────┘       │
+│         │               │HTTP        │HTTP         │
+└─────────┼───────────────┼────────────┼─────────────┘
+          │               │            │
+          │ HTTP          │            │
+          ▼               ▼            ▼
+┌─────────────────────────────────────────────────────┐
+│  Windows PC (192.168.x.xx)                          │
+│         ┌─────────┐         ┌─────────┐            │
+│         │Worker-3 │         │Worker-4 │            │
+│         │ :5001   │         │ :5002   │            │
+│         └─────────┘         └─────────┘            │
+└─────────────────────────────────────────────────────┘
 ```
+
+**Components:**
+- **Coordinator:** Loads data, distributes to workers, aggregates results
+- **Workers:** Execute map/reduce tasks, communicate via HTTP
+- **Dataset:** 2.96M NYC Taxi records (48 MB Parquet file)
+
+**Performance:**
+- Processing: ~40 seconds for 3M records
+- Throughput: ~74,000 records/second
+- Network: WiFi (Mac ↔ Windows)
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Development
 
-### Installation
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd Contemporary-Data-Processing-Systems-Project
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Running with Sample Data
-
-**Option 1: Using CLI (Recommended)**
-
-```bash
-# Terminal 1: Start workers
-python main.py worker worker-1 --port 5001 &
-python main.py worker worker-2 --port 5002 &
-python main.py worker worker-3 --port 5003 &
-python main.py worker worker-4 --port 5004 &
-
-# Terminal 2: Run Task 1 (Tip Analysis)
-python main.py coordinator --task 1
-
-# Or Task 2 (Route Profitability)
-python main.py coordinator --task 2
-
-# Or Task 3 (Hourly Traffic)
-python main.py coordinator --task 3
-```
-
-**Option 2: Using run_example.py**
-
-```bash
-# Run specific task
-python run_example.py 1  # Tip Analysis
-python run_example.py 2  # Route Profitability
-python run_example.py 3  # Hourly Traffic
-
-# Run all tasks sequentially
-python run_example.py
-```
-
-### Using Real NYC Taxi Data
-
-1. Download NYC Taxi Parquet file:
-   ```bash
-   # Example: Yellow Taxi Trip Data
-   # https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-   ```
-
-2. Update `config.yaml`:
-   ```yaml
-   dataset:
-     path: "./data/yellow_tripdata_2024-01.parquet"
-     max_records: null  # Use all records
-   ```
-
-3. Run analysis:
-   ```bash
-   python main.py coordinator --task 1
-   ```
-
----
-
-## 📊 Dataset
-
-**Source:** NYC Taxi & Limousine Commission Trip Record Data
-
-**Format:** Parquet (columnar storage)
-
-**Key Fields:**
-- `VendorID`: Taxi vendor identifier
-- `tpep_pickup_datetime`: Pickup timestamp
-- `tpep_dropoff_datetime`: Dropoff timestamp
-- `PULocationID`: Pickup location zone ID
-- `DOLocationID`: Dropoff location zone ID
-- `trip_distance`: Trip distance in miles
-- `fare_amount`: Base fare
-- `tip_amount`: Tip amount
-- `total_amount`: Total fare (including tips, tolls, etc.)
-
-**Download:** https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-
----
-
-## 📁 Project Structure
-
+### Project Structure
 ```
 Contemporary-Data-Processing-Systems-Project/
-├── README.md
-├── requirements.txt
-├── config.yaml
-├── main.py                  # CLI entry point
-├── run_example.py          # Programmatic examples
+├── main.py                  # Entry point
+├── config.yaml             # Cluster configuration
+├── requirements.txt        # Dependencies
+├── scripts/                # Helper scripts
+│   ├── start_mac_workers.sh
+│   ├── start_windows_workers.ps1
+│   ├── test_workers.sh
+│   └── setup_windows_firewall.ps1
 ├── src/
 │   ├── core/
-│   │   ├── base.py         # Abstract Mapper/Reducer/Partitioner
-│   │   ├── worker.py       # Worker node implementation
-│   │   └── coordinator.py  # Coordinator implementation
+│   │   ├── coordinator.py  # Coordinator implementation
+│   │   ├── worker.py       # Worker implementation
+│   │   └── base.py         # Mapper/Reducer base classes
 │   ├── tasks/
-│   │   ├── task1_tip_analysis.py           # Sergiusz's task
-│   │   ├── task2_route_profitability.py    # Ludwik's task
-│   │   └── task3_hourly_traffic.py         # Marcin's task
+│   │   ├── task1_tip_analysis.py
+│   │   ├── task2_route_profitability.py
+│   │   └── task3_hourly_traffic.py
 │   └── utils/
-│       └── parquet_loader.py  # Data loading utilities
-└── docs/
-    ├── SETUP.md
-    ├── ARCHITECTURE.md
-    └── PRESENTATION_SKETCH.md
+│       └── parquet_loader.py
+├── tests/                  # Unit tests (29 tests)
+└── data/                   # Dataset directory
+```
+
+### Run Tests
+```bash
+python3 -m pytest tests/ -v
+# 29/29 passing
+```
+
+### Manual Worker Start
+```bash
+# Mac - Terminal 1
+python3 main.py worker worker-1 --host 0.0.0.0 --port 5001
+
+# Mac - Terminal 2
+python3 main.py worker worker-2 --host 0.0.0.0 --port 5002
+```
+
+```powershell
+# Windows - PowerShell 1
+python main.py worker worker-3 --host 0.0.0.0 --port 5001
+
+# Windows - PowerShell 2
+python main.py worker worker-4 --host 0.0.0.0 --port 5002
 ```
 
 ---
 
-## 🧪 Testing
+## 🔧 Troubleshooting
+
+### Windows Firewall Issues
+If Mac can't connect to Windows workers:
+
+```powershell
+# Run as Administrator
+.\scripts\setup_windows_firewall.ps1
+
+# Or manually: Windows Defender Firewall → Advanced Settings
+# → Inbound Rules → New Rule → Port → TCP 5001,5002 → Allow
+```
+
+### IP Changed After Sleep
+IPs may change after restart/WiFi reconnect. Check and update `config.yaml`:
 
 ```bash
-# Run with sample data (1000 records)
-python run_example.py 1
+# Mac
+ifconfig getifaddr en0
 
-# Expected output:
-# Top results showing zones with highest average tip percentages
+# Windows
+ipconfig
+```
+
+### Connection Refused
+1. Check workers are running: `./scripts/test_workers.sh`
+2. Verify firewall ports 5001-5002 are open
+3. Ensure `--host 0.0.0.0` (not `localhost`)
+4. Both machines on same WiFi
+
+### "Module not found"
+```bash
+pip3 install -r requirements.txt  # Mac
+pip install -r requirements.txt   # Windows
 ```
 
 ---
 
-## 📝 Configuration
+## 📦 Dependencies
 
-Edit `config.yaml` to customize:
-- Worker node addresses
-- Dataset path and size limits
-- Task execution timeouts
-- Logging settings
+```
+Flask==3.1.0
+pandas==2.2.3
+pyarrow==18.1.0
+requests==2.32.3
+PyYAML==6.0.2
+dill==0.3.9
+pytest==8.3.4
+```
 
 ---
 
-## 🤝 Contributing
+## 📝 Dataset
 
-This is an academic project for Distributed Data Processing course.
+**Source:** NYC Taxi & Limousine Commission  
+**File:** `yellow_tripdata_2024-01.parquet` (January 2024)  
+**Size:** 48 MB  
+**Records:** 2,964,624 trips  
+**Download:** https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+
+**Key Fields:**
+- `PULocationID`, `DOLocationID` - Pickup/dropoff zones
+- `fare_amount`, `tip_amount`, `total_amount` - Payment info
+- `trip_distance` - Distance in miles
+- `tpep_pickup_datetime` - Pickup timestamp
+
+---
+
+
+
+**Course:** Distributed Data Processing  
+**Institution:**   
+
+
+**Learning Objectives:**
+- Distributed systems design
+- Map-Reduce paradigm
+- HTTP-based worker communication
+- Cross-platform deployment (Mac/Windows)
+- Large-scale data processing
 
 ---
 
 ## 📄 License
 
-Academic project - Politechnika Łódzka
+Academic project for educational purposes.
 
----
-
-## 📧 Contact
-
-For questions or issues:
-- 
-- 
-- 
-
-**Course:** Distributed Data Processing  
-**Institution:** Politechnika Łódzka  
-
+**NYC TLC Data License:**  
+Data provided by NYC Taxi & Limousine Commission under Open Data initiative.
