@@ -1,0 +1,49 @@
+# Multi-Machine Cluster Configuration
+# Example: 2 physical machines setup
+
+cluster:
+  coordinator:
+    host: "192.168.1.10"  # Replace with Machine 1 IP
+    port: 5000
+    
+  workers:
+    # Workers on Machine 1 (Coordinator machine)
+    - id: "worker-1"
+      host: "192.168.1.10"  # Machine 1 IP
+      port: 5001
+      data_dir: "./data/worker1"
+      
+    - id: "worker-2"
+      host: "192.168.1.10"  # Machine 1 IP
+      port: 5002
+      data_dir: "./data/worker2"
+      
+    # Workers on Machine 2 (Remote machine)
+    - id: "worker-3"
+      host: "192.168.1.20"  # Machine 2 IP - CHANGE THIS!
+      port: 5001
+      data_dir: "./data/worker3"
+      
+    - id: "worker-4"
+      host: "192.168.1.20"  # Machine 2 IP - CHANGE THIS!
+      port: 5002
+      data_dir: "./data/worker4"
+
+# Dataset configuration
+dataset:
+  path: "./data/yellow_tripdata_2024-01.parquet"
+  max_records: 50000  # 50k for testing, null for all ~3M
+  columns: null
+
+# Task execution settings
+execution:
+  task_timeout: 300
+  max_retries: 3
+  heartbeat_interval: 10
+  shuffle_buffer_size: 100
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "mapreduce.log"
