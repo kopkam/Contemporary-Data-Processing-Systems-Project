@@ -26,10 +26,14 @@ env/
 ENV/
 .venv
 
+# Sensitive Configuration (with real IPs)
+config.yaml
+
 # Data and output
 data/
 output/
 results/
+results_*.txt
 *.parquet
 *.csv
 *.json
