@@ -49,7 +49,8 @@ class RouteProfitabilityMapper(Mapper):
                 revenue > 0):
                 
                 revenue_per_mile = revenue / distance
-                route = (pickup_zone, dropoff_zone)
+                # Use string key for JSON serialization (instead of tuple)
+                route = f"{pickup_zone}->{dropoff_zone}"
                 yield (route, revenue_per_mile)
                 
         except (ValueError, TypeError, KeyError):
@@ -61,8 +62,8 @@ class RouteProfitabilityReducer(Reducer):
     """
     Reduce: Calculate average revenue per mile for each route.
     
-    Input: ((pickup_zone, dropoff_zone), [revenue_per_mile1, ...])
-    Output: ((pickup_zone, dropoff_zone), avg_revenue_per_mile)
+    Input: (route_string, [revenue_per_mile1, ...])
+    Output: (route_string, avg_revenue_per_mile)
     """
     
     def reduce(self, key: Any, values: List[Any]) -> Iterator[Tuple[Any, Any]]:
@@ -70,11 +71,11 @@ class RouteProfitabilityReducer(Reducer):
         Compute average revenue per mile for a route.
         
         Args:
-            key: Route tuple (pickup_zone, dropoff_zone)
+            key: Route string "pickup_zone->dropoff_zone"
             values: List of revenue_per_mile values for this route
             
         Yields:
-            ((pickup_zone, dropoff_zone), average_revenue_per_mile)
+            (route_string, average_revenue_per_mile)
         """
         if values:
             avg_revenue_per_mile = sum(values) / len(values)
