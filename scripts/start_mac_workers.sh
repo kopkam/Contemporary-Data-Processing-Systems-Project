@@ -2,7 +2,9 @@
 # Start Mac workers in separate Terminal windows
 # Automatically launches worker-1 and worker-2
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get project root directory (parent of scripts folder)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "🚀 Starting Mac Workers (worker-1, worker-2)"
 echo "============================================="
