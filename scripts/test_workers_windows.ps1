@@ -6,9 +6,13 @@ Write-Host "Testing Worker Connectivity" -ForegroundColor Cyan
 Write-Host "===========================" -ForegroundColor Cyan
 Write-Host ""
 
+# Get project root directory (parent of scripts folder)
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$configPath = Join-Path $projectRoot "config.yaml"
+
 # Check if config.yaml exists
-if (-not (Test-Path "config.yaml")) {
-    Write-Host "Error: config.yaml not found!" -ForegroundColor Red
+if (-not (Test-Path $configPath)) {
+    Write-Host "Error: config.yaml not found at $configPath!" -ForegroundColor Red
     Write-Host "Copy config.yaml.example and edit with your IPs" -ForegroundColor Yellow
     exit 1
 }
@@ -16,7 +20,7 @@ if (-not (Test-Path "config.yaml")) {
 # Read workers from config.yaml using Python
 $workers = python -c @"
 import yaml
-with open('config.yaml') as f:
+with open('$($configPath -replace '\\', '/')') as f:
     config = yaml.safe_load(f)
     for w in config['cluster']['workers']:
         print(f\"{w['host']}:{w['port']}\")
