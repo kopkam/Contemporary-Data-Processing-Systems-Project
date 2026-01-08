@@ -6,11 +6,13 @@ echo "🔍 Testing Worker Connectivity"
 echo "=============================="
 echo ""
 
-# Read worker addresses from config.yaml using Python
-CONFIG_FILE="config.yaml"
+# Get project root directory (parent of scripts folder)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_FILE="$PROJECT_DIR/config.yaml"
 
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "❌ Error: config.yaml not found!"
+    echo "❌ Error: config.yaml not found at $CONFIG_FILE!"
     echo "   Copy config.yaml.example and edit with your IPs"
     exit 1
 fi
