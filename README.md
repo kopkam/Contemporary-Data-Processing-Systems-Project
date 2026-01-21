@@ -1,20 +1,11 @@
 # NYC Taxi Map-Reduce Analysis
 
-**Distributed MapReduce System**  
-****
+**Distributed MapReduce System**
 
 Distributed map-reduce system for analyzing 3M NYC Taxi trip records across 2 physical machines (Mac + Windows).
 
 ---
 
-
-
-
-
-
-- 
-
----
 
 ## 🚀 Quick Start (Multi-Machine Deployment)
 
@@ -123,8 +114,6 @@ python3 main.py coordinator --task 3
 ## 📊 Tasks
 
 ### Task 1: Tip Analysis by Pickup Zone
-**Author:** 
-
 Analyzes average tip percentage for each NYC taxi zone.
 
 - **Map:** `(trip) → (pickup_zone_id, tip_percentage)`
@@ -141,8 +130,6 @@ Zone 133: 142.48% avg tip
 ---
 
 ### Task 2: Route Profitability
-**Author:** 
-
 Calculates revenue per mile for pickup→dropoff routes.
 
 - **Map:** `(trip) → ("pickup->dropoff", revenue_per_mile)`
@@ -159,8 +146,6 @@ Calculates revenue per mile for pickup→dropoff routes.
 ---
 
 ### Task 3: Hourly Traffic Distribution
-**Author:** 
-
 Analyzes trip counts by hour of day.
 
 - **Map:** `(trip) → (hour, 1)`
@@ -329,21 +314,6 @@ pytest==8.3.4
 - `fare_amount`, `tip_amount`, `total_amount` - Payment info
 - `trip_distance` - Distance in miles
 - `tpep_pickup_datetime` - Pickup timestamp
-
----
-
-
-
-**Course:** Distributed Data Processing  
-**Institution:**   
-
-
-**Learning Objectives:**
-- Distributed systems design
-- Map-Reduce paradigm
-- HTTP-based worker communication
-- Cross-platform deployment (Mac/Windows)
-- Large-scale data processing
 
 ---
 
