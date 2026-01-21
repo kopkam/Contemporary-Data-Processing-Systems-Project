@@ -5,6 +5,7 @@ Worker node implementation for distributed map-reduce.
 import os
 import pickle
 import logging
+import time
 from flask import Flask, request, jsonify
 from typing import Any, Dict, List
 import requests
@@ -61,11 +62,15 @@ class Worker:
         def execute_map():
             """Execute map task on assigned data."""
             try:
+                map_start_time = time.time()
+                
                 data = request.json
                 mapper_class = pickle.loads(bytes.fromhex(data['mapper']))
                 partitioner_class = pickle.loads(bytes.fromhex(data['partitioner']))
                 input_data = data['input_data']
                 worker_addresses = data['worker_addresses']
+                
+                logger.info(f"[Worker {self.worker_id}] MAP: Processing {len(input_data):,} records...")
                 
                 # Instantiate mapper and partitioner
                 mapper = mapper_class()
@@ -76,15 +81,26 @@ class Worker:
                 
                 # Execute map phase
                 partitioned_data = {i: [] for i in range(len(worker_addresses))}
+                total_intermediate = 0
                 
                 for key, value in input_data:
                     for emitted_key, emitted_value in mapper.map(key, value):
                         partition = partitioner.get_partition(emitted_key, len(worker_addresses))
                         partitioned_data[partition].append((emitted_key, emitted_value))
+                        total_intermediate += 1
+                
+                map_time = time.time() - map_start_time
+                logger.info(f"[Worker {self.worker_id}] MAP: Generated {total_intermediate:,} intermediate pairs in {map_time:.2f}s")
                 
                 # Send partitioned data to appropriate workers (shuffle)
+                logger.info(f"[Worker {self.worker_id}] SHUFFLE: Sending to {len(worker_addresses)} workers...")
+                shuffle_start_time = time.time()
+                
                 for partition_id, partition_data in partitioned_data.items():
                     target_worker = worker_addresses[partition_id]
+                    
+                    if len(partition_data) > 0:
+                        logger.info(f"[Worker {self.worker_id}] SHUFFLE: → Worker {partition_id+1}: {len(partition_data):,} pairs")
                     
                     try:
                         response = requests.post(
@@ -97,7 +113,17 @@ class Worker:
                         logger.error(f"Failed to send data to {target_worker}: {e}")
                         raise
                 
-                return jsonify({'status': 'success', 'worker_id': self.worker_id})
+                shuffle_time = time.time() - shuffle_start_time
+                total_time = time.time() - map_start_time
+                logger.info(f"[Worker {self.worker_id}] SHUFFLE: Completed in {shuffle_time:.2f}s")
+                logger.info(f"[Worker {self.worker_id}] MAP+SHUFFLE: Total time {total_time:.2f}s")
+                
+                return jsonify({
+                    'status': 'success',
+                    'worker_id': self.worker_id,
+                    'intermediate_count': total_intermediate,
+                    'map_time': total_time
+                })
                 
             except Exception as e:
                 logger.error(f"Map execution failed: {e}")
@@ -125,8 +151,16 @@ class Worker:
         def execute_reduce():
             """Execute reduce task on intermediate data."""
             try:
+                reduce_start_time = time.time()
+                
                 data = request.json
                 reducer_class = pickle.loads(bytes.fromhex(data['reducer']))
+                
+                # Count total intermediate pairs
+                total_pairs = sum(len(values) for values in self.intermediate_data.values())
+                unique_keys = len(self.intermediate_data)
+                
+                logger.info(f"[Worker {self.worker_id}] REDUCE: Processing {total_pairs:,} pairs across {unique_keys} unique keys")
                 
                 # Instantiate reducer
                 reducer = reducer_class()
@@ -139,7 +173,16 @@ class Worker:
                     for result_key, result_value in reducer.reduce(key, values):
                         self.final_results.append((result_key, result_value))
                 
-                return jsonify({'status': 'success', 'worker_id': self.worker_id})
+                reduce_time = time.time() - reduce_start_time
+                logger.info(f"[Worker {self.worker_id}] REDUCE: Output {len(self.final_results)} results in {reduce_time:.2f}s")
+                
+                return jsonify({
+                    'status': 'success',
+                    'worker_id': self.worker_id,
+                    'input_pairs': total_pairs,
+                    'output_count': len(self.final_results),
+                    'reduce_time': reduce_time
+                })
                 
             except Exception as e:
                 logger.error(f"Reduce execution failed: {e}")
