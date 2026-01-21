@@ -39,7 +39,7 @@ wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-01.par
 cd ..
 
 # Get Mac IP address
-ifconfig getifaddr en0  # e.g., 192.168.1.16
+ipconfig getifaddr en0  # e.g., 192.168.1.16
 
 # Copy config.yaml.example to config.yaml and edit:
 cp config.yaml.example config.yaml
