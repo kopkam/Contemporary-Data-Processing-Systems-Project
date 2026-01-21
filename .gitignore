@@ -57,3 +57,4 @@ htmlcov/
 # Configuration overrides
 config.local.yaml
 results/
+.DS_Store
