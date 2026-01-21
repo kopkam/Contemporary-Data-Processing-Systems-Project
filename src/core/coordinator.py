@@ -138,15 +138,22 @@ class Coordinator:
         chunk_size = len(input_data) // self.num_workers
         splits = []
         
+        logger.info(f"Splitting {len(input_data):,} records across {self.num_workers} workers...")
+        
         for i in range(self.num_workers):
             start = i * chunk_size
             end = start + chunk_size if i < self.num_workers - 1 else len(input_data)
-            splits.append(input_data[start:end])
+            split_data = input_data[start:end]
+            splits.append(split_data)
+            logger.info(f"  Worker {i+1}: records {start:,}-{end:,} ({len(split_data):,} records)")
         
+        logger.info(f"Dataset split complete: {self.num_workers} partitions created")
         return splits
     
     def _execute_map_phase(self, data_splits: List[List[tuple]], mapper_hex: str, partitioner_hex: str):
         """Execute map phase on all workers."""
+        map_start_time = time.time()
+        
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             futures = []
             
@@ -158,6 +165,8 @@ class Coordinator:
                     'worker_addresses': self.worker_addresses
                 }
                 
+                logger.info(f"Worker {i+1}: Starting map phase with {len(data_split):,} records")
+                
                 future = executor.submit(
                     requests.post,
                     f"{worker_addr}/execute_map",
@@ -167,22 +176,38 @@ class Coordinator:
                 futures.append(future)
             
             # Wait for all map tasks to complete
-            for i, future in enumerate(as_completed(futures)):
+            completed_count = 0
+            for future in as_completed(futures):
                 try:
                     response = future.result()
                     response.raise_for_status()
-                    logger.info(f"Map task {i+1}/{self.num_workers} completed")
+                    result_data = response.json()
+                    completed_count += 1
+                    
+                    worker_id = result_data.get('worker_id', 'unknown')
+                    intermediate_count = result_data.get('intermediate_count', 0)
+                    map_time = result_data.get('map_time', 0)
+                    
+                    logger.info(f"Worker {worker_id}: Completed map phase in {map_time:.2f}s → {intermediate_count:,} intermediate pairs")
+                    logger.info(f"Map progress: {completed_count}/{self.num_workers} workers completed")
                 except Exception as e:
                     logger.error(f"Map task failed: {e}")
                     raise
+        
+        map_total_time = time.time() - map_start_time
+        logger.info(f"All workers completed map phase in {map_total_time:.2f}s")
     
     def _execute_reduce_phase(self, reducer_hex: str):
         """Execute reduce phase on all workers."""
+        reduce_start_time = time.time()
+        
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             futures = []
             
-            for worker_addr in self.worker_addresses:
+            for i, worker_addr in enumerate(self.worker_addresses):
                 payload = {'reducer': reducer_hex}
+                
+                logger.info(f"Worker {i+1}: Starting reduce phase")
                 
                 future = executor.submit(
                     requests.post,
@@ -193,17 +218,30 @@ class Coordinator:
                 futures.append(future)
             
             # Wait for all reduce tasks to complete
-            for i, future in enumerate(as_completed(futures)):
+            completed_count = 0
+            for future in as_completed(futures):
                 try:
                     response = future.result()
                     response.raise_for_status()
-                    logger.info(f"Reduce task {i+1}/{self.num_workers} completed")
+                    result_data = response.json()
+                    completed_count += 1
+                    
+                    worker_id = result_data.get('worker_id', 'unknown')
+                    input_pairs = result_data.get('input_pairs', 0)
+                    output_count = result_data.get('output_count', 0)
+                    reduce_time = result_data.get('reduce_time', 0)
+                    
+                    logger.info(f"Worker {worker_id}: Reduced {input_pairs:,} pairs → {output_count} unique keys in {reduce_time:.2f}s")
+                    logger.info(f"Reduce progress: {completed_count}/{self.num_workers} workers completed")
                 except Exception as e:
                     logger.error(f"Reduce task failed: {e}")
                     raise
+        
+        reduce_total_time = time.time() - reduce_start_time
+        logger.info(f"All workers completed reduce phase in {reduce_total_time:.2f}s")
     
     def _collect_results(self) -> List[tuple]:
-        """Collect final results from all workers."""
+        """Collect final results from all workers and merge duplicates."""
         all_results = []
         
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
@@ -216,10 +254,49 @@ class Coordinator:
                 try:
                     response = future.result()
                     response.raise_for_status()
-                    results = response.json()['results']
+                    worker_data = response.json()
+                    results = worker_data['results']
+                    worker_id = worker_data.get('worker_id', 'unknown')
+                    
+                    logger.info(f"Collected from Worker {worker_id}: {len(results)} results")
                     all_results.extend(results)
                 except Exception as e:
                     logger.error(f"Failed to collect results: {e}")
                     raise
         
-        return all_results
+        # Final merge: combine duplicate keys from different workers
+        merged = {}
+        for key, value in all_results:
+            if key not in merged:
+                merged[key] = []
+            merged[key].append(value)
+        
+        # Merge duplicate keys intelligently:
+        # - For counts (large integers): SUM (e.g., trip counts in Task 3)
+        # - For percentages/averages (small floats): AVERAGE (e.g., tip%, $/mile in Task 1/2)
+        logger.info(f"Merging results: {len(all_results)} raw results from all workers")
+        
+        final_results = []
+        for key, values in merged.items():
+            if len(values) == 1:
+                # No duplicates, use as-is
+                final_results.append((key, values[0]))
+            else:
+                # Multiple values from different workers - need to merge
+                if values and isinstance(values[0], (int, float)):
+                    # Heuristic: if values look like counts (integers > 100), sum them
+                    # Otherwise (percentages, averages), take average
+                    if all(isinstance(v, int) or (isinstance(v, float) and v > 100) for v in values):
+                        # Looks like counts - SUM (Task 3: hourly trip counts)
+                        merged_value = sum(values)
+                        final_results.append((key, int(merged_value)))
+                    else:
+                        # Looks like averages/percentages - AVERAGE (Task 1/2: tip%, $/mile)
+                        avg_value = sum(values) / len(values)
+                        final_results.append((key, round(avg_value, 2)))
+                else:
+                    # For non-numeric, take first (shouldn't happen)
+                    final_results.append((key, values[0]))
+        
+        logger.info(f"Final results: {len(final_results)} unique keys")
+        return final_results
